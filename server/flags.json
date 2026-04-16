@@ -1,0 +1,5 @@
+{
+  "enable-metrics-panel": true,
+  "enable-dependency-map": true,
+  "enable-alert-actions": true
+}
