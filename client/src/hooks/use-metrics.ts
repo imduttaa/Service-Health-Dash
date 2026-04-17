@@ -15,6 +15,15 @@ import { timeRangeToFrom, UrlState } from './use-url-state';
  *  - Background revalidation when timeRange changes
  *  - Loading/error state surfacing
  */
+/** Maps each time-range label to its duration in milliseconds. */
+const RANGE_MS: Record<UrlState['timeRange'], number> = {
+  '5m':  5  * 60_000,
+  '15m': 15 * 60_000,
+  '1h':  60 * 60_000,
+  '6h':  6  * 60 * 60_000,
+  '24h': 24 * 60 * 60_000,
+};
+
 export function useMetrics(serviceId: string | null, timeRange: UrlState['timeRange']) {
   const setMetricHistory = useServicesStore((s) => s.setMetricHistory);
   const liveMetrics = useServicesStore((s) =>
@@ -35,9 +44,12 @@ export function useMetrics(serviceId: string | null, timeRange: UrlState['timeRa
 
   useEffect(() => {
     if (query.data && serviceId) {
-      setMetricHistory(serviceId, query.data);
+      // Pass the window duration so appendMetric trims by time, not by a
+      // fixed point count — prevents the chart collapsing to ~10 min when
+      // a longer range (15m / 1h / 6h / 24h) is selected.
+      setMetricHistory(serviceId, query.data, RANGE_MS[timeRange]);
     }
-  }, [query.data, serviceId, setMetricHistory]);
+  }, [query.data, serviceId, setMetricHistory, timeRange]);
 
   return { ...query, liveMetrics };
 }
