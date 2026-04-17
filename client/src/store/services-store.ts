@@ -63,7 +63,7 @@ export const useServicesStore = create<ServicesState>((set) => ({
   setMetricHistory: (serviceId, history) =>
     set((state) => {
       const next = new Map(state.metrics);
-      next.set(serviceId, history.slice(-MAX_POINTS));
+      next.set(serviceId, history);
       return { metrics: next };
     }),
 

@@ -64,6 +64,7 @@ export function AlertsTable({ urlState, onUrlUpdate }: AlertsTableProps) {
         pageSize: PAGE_SIZE,
       }),
     staleTime: 15_000,
+    refetchInterval: 15_000,
     placeholderData: (prev) => prev,
   });
 
@@ -224,15 +225,22 @@ export function AlertsTable({ urlState, onUrlUpdate }: AlertsTableProps) {
     </div>
   );
 
-  const allRows: Alert[] = [...uniqueLiveAlerts, ...(data?.data ?? [])];
+  // Cap live alerts to PAGE_SIZE, then fill remaining slots from REST data.
+  // This guarantees page 1 never exceeds PAGE_SIZE rows regardless of how many
+  // WebSocket alerts have arrived since the last REST fetch.
+  const cappedLive = uniqueLiveAlerts.slice(0, PAGE_SIZE);
+  const allRows: Alert[] = [
+    ...cappedLive,
+    ...(data?.data ?? []).slice(0, PAGE_SIZE - cappedLive.length),
+  ];
 
   return (
     <PanelWrapper title="Alerts" panelName="AlertsTable" headerRight={filterHeader}>
-      <div className="overflow-auto">
+      <div className="overflow-auto max-h-[420px]">
         {/* Table header */}
         <table className="w-full text-sm" role="grid" aria-label="Alerts table">
-          <thead>
-            <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
               {['Severity', 'Service', 'Message', 'Triggered', 'Status', ...(alertActionsEnabled ? ['Actions'] : [])].map((h) => (
                 <th
                   key={h}
