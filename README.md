@@ -126,8 +126,27 @@ The `MetricsPanel` and `DependencyMap` flags are evaluated **independently** —
 - **Charts → PNG** — download button in the MetricsPanel header captures all three charts (Response Time, Error Rate, Request Rate) at 2× resolution including legends
 - **Alerts → CSV** — CSV button in the Alerts panel header exports all records matching the current filters (not just the current page), UTF-8 with BOM for direct Excel compatibility
 
+### Dark Mode
+Theme toggle in the Navbar with system preference detection (`prefers-color-scheme`). Preference is persisted in `localStorage` so it survives a page reload. Implemented via `ThemeContext` + Tailwind's `class` dark mode strategy — no runtime CSS-in-JS overhead.
+
+### Dependency Map
+SVG-based service dependency graph (no external graph library — raw SVG keeps the bundle lean). Uses a deterministic column-per-group layout. Degraded and down dependency paths are highlighted with amber dashed edges. Includes an inline legend, fits its container width responsively, and supports fullscreen mode.
+
 ### Error Isolation
 Each panel is wrapped in a `PanelErrorBoundary`. A crash in the MetricsPanel doesn't affect the AlertsTable.
+
+## Bonus Features Implemented
+
+The following optional bonus features from the assignment are fully implemented:
+
+| Feature | Details |
+|---------|---------|
+| **Dependency Map** | SVG node graph showing inter-service dependencies. Degraded/down paths highlighted with amber dashed edges. Responsive (scales to container width), fullscreen toggle, inline legend. |
+| **Dark Mode** | Navbar theme toggle with `prefers-color-scheme` system detection. Persisted in `localStorage`. Zero runtime overhead via Tailwind `class` strategy. |
+| **Data Export** | Charts → PNG at 2× resolution via `html2canvas` (all three charts captured in one file). Alerts → CSV with UTF-8 BOM for direct Excel compatibility; exports all rows matching current filters, not just the visible page. |
+| **End-to-End Type Safety** | `@healthdash/shared` npm workspace package shared by both server and client. `Service`, `Alert`, `MetricDataPoint`, `StreamEvent`, and `FeatureFlagKey` are defined once — no duplicated type definitions, no `any` at the API boundary. |
+| **Request Deduplication** | TanStack Query's `queryKey` cache ensures that if multiple components mount with the same query key simultaneously, only one HTTP request fires. The metrics query, services list, and flags are all deduplicated automatically. |
+| **Rate-Limited Stream** | All 20 per-tick `metric_update` WebSocket events in `useStream` are coalesced into a single `requestAnimationFrame` flush before reaching Zustand. Metric renders are capped at 60 fps regardless of server emission cadence. |
 
 ## API Reference
 
