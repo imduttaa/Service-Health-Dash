@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   LineChart,
   Line,
@@ -17,7 +17,7 @@ import { formatMs, formatPercent, formatRate, formatTimeLabel } from '../../lib/
 import { UrlState } from '../../hooks/use-url-state';
 import { cn } from '../../lib/cn';
 import { exportChartsAsPng } from '../../lib/export';
-import { Download } from 'lucide-react';
+import { Download, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '../ui/button';
 
 type TimeRange = UrlState['timeRange'];
@@ -144,6 +144,17 @@ interface MetricsPanelProps {
 export function MetricsPanel({ serviceId, timeRange, onTimeRangeChange }: MetricsPanelProps) {
   const chartsRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  // Close fullscreen on Escape
+  useEffect(() => {
+    if (!fullscreen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFullscreen(false);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [fullscreen]);
 
   const { isLoading, error } = useMetrics(serviceId, timeRange);
   const rawMetrics = useServicesStore((s) =>
@@ -208,6 +219,14 @@ export function MetricsPanel({ serviceId, timeRange, onTimeRangeChange }: Metric
           <Download className="h-3.5 w-3.5" />
         </Button>
       )}
+      <button
+        type="button"
+        onClick={() => setFullscreen((f) => !f)}
+        title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        className="p-1.5 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      >
+        {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+      </button>
     </div>
   );
 
@@ -216,6 +235,7 @@ export function MetricsPanel({ serviceId, timeRange, onTimeRangeChange }: Metric
       title={serviceName ? `Metrics — ${serviceName}` : 'Metrics'}
       panelName="MetricsPanel"
       headerRight={headerRight}
+      className={cn(fullscreen && 'fixed inset-0 z-50 rounded-none')}
     >
       {!serviceId ? (
         <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400">
@@ -233,7 +253,7 @@ export function MetricsPanel({ serviceId, timeRange, onTimeRangeChange }: Metric
           <ChartSkeleton />
         </div>
       ) : (
-        <div ref={chartsRef} className="overflow-y-auto" style={{ maxHeight: '540px' }}>
+        <div ref={chartsRef} className={cn('overflow-y-auto', fullscreen && 'h-full')} style={fullscreen ? undefined : { maxHeight: '540px' }}>
           <MetricChart
             title="Response Time"
             data={chartData}
