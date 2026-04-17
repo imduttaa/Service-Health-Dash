@@ -2,6 +2,11 @@
 
 A real-time observability platform for monitoring microservice health and performance.
 
+## Demo
+
+https://github.com/user-attachments/assets/ae1d105e-fda4-4654-bb52-ebeec9a99a73
+
+
 ## Tech Stack
 
 | Layer | Choice | Rationale |
